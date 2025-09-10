@@ -55,6 +55,7 @@ interface RealtimeEvent {
 }
 
 export function ConsolePage() {
+  const SAMPLE_RATE = parseInt(process.env.REACT_APP_SAMPLE_RATE || '24000', 10);
   /**
    * Ask user for API Key
    * If we're using the local relay server, we don't need this
@@ -75,18 +76,30 @@ export function ConsolePage() {
    * - RealtimeClient (API client)
    */
   const wavRecorderRef = useRef<WavRecorder>(
-    new WavRecorder({ sampleRate: 24000 })
+    new WavRecorder({ sampleRate: SAMPLE_RATE })
   );
   const wavStreamPlayerRef = useRef<WavStreamPlayer>(
-    new WavStreamPlayer({ sampleRate: 24000 })
+    new WavStreamPlayer({ sampleRate: SAMPLE_RATE })
   );
   const clientRef = useRef<RealtimeClient>(
     new RealtimeClient(
       LOCAL_RELAY_SERVER_URL
-        ? { url: LOCAL_RELAY_SERVER_URL }
+        ? { 
+          url: LOCAL_RELAY_SERVER_URL,
+          authorizationType:
+            (process.env.REACT_APP_AUTHORIZATION_TYPE as
+              | 'Bearer'
+              | 'api-key') || 'Bearer',
+          voice: process.env.REACT_APP_VOICE || 'verse',
+        }
         : {
             apiKey: apiKey,
             dangerouslyAllowAPIKeyInBrowser: true,
+            authorizationType:
+              (process.env.REACT_APP_AUTHORIZATION_TYPE as
+                | 'Bearer'
+                | 'api-key') || 'Bearer',
+            voice: process.env.REACT_APP_VOICE || 'verse',
           }
     )
   );
@@ -184,7 +197,7 @@ export function ConsolePage() {
     client.sendUserMessageContent([
       {
         type: `input_text`,
-        text: `Hello!`,
+        text: `Привет!`,
         // text: `For testing purposes, I want you to list ten car brands. Number each item, e.g. "one (or whatever number you are one): the item name".`
       },
     ]);
@@ -380,6 +393,8 @@ export function ConsolePage() {
     client.updateSession({ instructions: instructions });
     // Set transcription, otherwise we don't get user transcriptions back
     client.updateSession({ input_audio_transcription: { model: 'whisper-1' } });
+    // Set voice
+    client.updateSession({ voice: process.env.REACT_APP_VOICE || 'verse' });
 
     // Add tools
     client.addTool(
@@ -484,8 +499,8 @@ export function ConsolePage() {
       if (item.status === 'completed' && item.formatted.audio?.length) {
         const wavFile = await WavRecorder.decode(
           item.formatted.audio,
-          24000,
-          24000
+          SAMPLE_RATE,
+          SAMPLE_RATE
         );
         item.formatted.file = wavFile;
       }

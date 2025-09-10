@@ -32,9 +32,12 @@ export class RealtimeRelay {
 
     // Instantiate new client
     this.log(`Connecting with key "${this.apiKey.slice(0, 3)}..."`);
+    this.log(`Connecting with default voice "${process.env.VOICE || 'verse'}"`);
     const client = new RealtimeClient({
       url: process.env.PROXY_URL,
       apiKey: this.apiKey,
+      authorizationType: process.env.AUTHORIZATION_TYPE || 'Bearer',
+      voice: process.env.VOICE || 'verse',
     });
 
     // Relay: OpenAI Realtime API Event -> Browser Event
